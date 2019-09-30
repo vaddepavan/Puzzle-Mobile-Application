@@ -1,0 +1,214 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title> 15 Puzzle</title>
+	<link rel="stylesheet" href="themes/15puzzle.min.css" />
+	<link rel="stylesheet" href="themes/jquery.mobile.icons.min.css" />
+	<link rel="stylesheet" href="themes/jquery.mobile.structure-1.4.2.min.css" />
+	<script src="themes/jquery-1.10.2.min.js"></script>
+	<script src="themes/jquery.mobile-1.4.2.min.js"></script>
+	<style type="text/css">
+		.puzzleBlock{
+			width: 25px;
+			height: 30px;
+			line-height: 30px;
+			vertical-align: middle;
+			text-align: center;			
+		}
+		.center-wrapper{
+			margin: 0 auto;
+			text-align: center;
+		}
+		.left{
+			float:left;
+		}
+		.right{
+			float:right;
+		}
+		.emptyBlock{
+			background-color: #676C6E !important;
+		}
+	</style>
+	<script type="text/javascript">
+		var gridArray = [], isSolvable = false, numMoves=0;
+		$(document).ready(function(){
+			
+			buildAll();
+
+			$('.puzzleBlock').on('tap', function() {
+   				moveBlock($(this).attr('id'));
+   				checkForGameCompletion();
+			});
+
+			$(document).on('click','#refresh',function(){
+				buildAll();
+			});
+
+			$( "#gameOver" ).on( "popupafterclose", function( event, ui ) {
+				buildAll();
+			});
+
+		});
+
+		function checkForGameCompletion(){
+			var isGameComplete = true, msg="Congrats!! ";;
+			for(var i=0;i<15;i++){
+				if($('#'+i).html()!=(i+1)){
+					isGameComplete = false;
+					break;
+				}
+			}
+			if(isGameComplete){
+				var moves = window.localStorage.getItem("movesRecord");
+				if(moves!=null){
+					if(moves>numMoves){
+						window.localStorage.setItem("movesRecord",numMoves);
+						msg = msg + "you took "+(moves-numMoves)+" less moves to complete the puzzle";
+						$('#minMoves').html(numMoves);
+
+					}
+				}else{
+					window.localStorage.setItem("movesRecord",numMoves);
+				}
+				$('#msg').html(msg);
+				$('#gameOver').popup('open').trigger("create");
+
+			}
+		}
+
+
+		function moveBlock(id){
+
+			var from=id,to=-1;
+
+			if($('#'+(parseInt(id)-1)).html()==""){
+				to = parseInt(id)-1;
+			}else if($('#'+(parseInt(id)+1)).html()==""){
+				to = parseInt(id)+1;
+			}else if($('#'+(parseInt(id)-4)).html()==""){
+				to = parseInt(id)-4;
+			}else if($('#'+(parseInt(id)+4)).html()==""){
+				to = parseInt(id)+4;
+			}
+
+			if(to!=-1){
+				$('#'+to).html($('#'+from).html()).toggleClass("emptyBlock");
+				$('#'+from).html("").toggleClass("emptyBlock");
+				numMoves = numMoves + 1;
+				$('#cMoves').html(numMoves);
+			}
+		}
+
+		function buildAll(){
+			gridArray = [];
+			isSolvable = false;
+			numMoves=0;
+			var moves = window.localStorage.getItem("movesRecord");
+			if(moves!=null){
+				$('#minMoves').html(moves);
+			}
+			$('#cMoves').html(numMoves);
+			while(!isSolvable){
+				gridArray = generateNumbers();
+				isSolvable = isPuzzleSolvable(gridArray);
+			}
+			populateGrid(gridArray);
+		}
+
+		function populateGrid(arr){
+			var len = arr.length;
+			for(var i=0;i<len;i++){
+				if(arr[i]==16){
+					$('#'+i).html("").addClass("emptyBlock");
+				}else{
+					$('#'+i).html(arr[i]).removeClass("emptyBlock");
+				}
+				
+			}
+		}
+
+		function isPuzzleSolvable(arr){
+			var sum = 0, len = arr.length, solvable=false;
+			for(var i=0;i<len;i++){
+				for(var j=i+1;j<len;j++){
+					if(arr[i]!=16 && arr[i]>arr[j]){
+						sum = sum + 1;
+					}
+				}
+			}
+			if(sum%2==0){
+				solvable=true
+			}
+			return solvable;
+		}
+		
+		function randomNumBetweenRange(min,max)
+		{
+		    return Math.floor(Math.random()*(max-min+1)+min);
+		}
+
+		function generateNumbers(){
+			var isGridFilled = false, gridArr = [], num;
+			var tempArr = [5,6,7,1,2,3,4,8,9,14,15,16,10,11,12,13];
+			while(!isGridFilled){
+				num = randomNumBetweenRange(0,tempArr.length-1);
+				if(!isPresentInArray(tempArr,num)){
+					if(gridArr.length==16){
+						isGridFilled = true;
+					}else{
+						gridArr.push(tempArr[num]);
+						tempArr.splice(num,1);
+					}
+				}
+			}
+			return gridArr;
+		}
+
+		function isPresentInArray(arr,obj){
+			return (arr.indexOf(obj) != -1);
+		}
+
+	</script>
+</head>
+<body>
+	<div data-role="page" data-theme="a" class="center-wrapper">
+		<div data-role="header" data-position="inline">
+			<h1>15 Puzzle</h1>
+			<a href="#popupBasic" data-position-to="window" data-transition="fade" data-rel="popup" id="infoicon" data-icon="info" class="ui-btn-right" data-iconpos="notext">Info</a>
+			<a href="#" id="refresh" data-icon="refresh" class="ui-btn-left" data-iconpos="notext">Refresh</a>	
+		</div>
+		<div data-role="content" data-theme="a" id="content">
+			<span class="left">Record:<span id="minMoves"></span></span><span class="right">Moves:<span id="cMoves"></span></span><br />
+			<a id="0" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="1" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="2" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="3" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a><br/>
+			<a id="4" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="5" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="6" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="7" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a><br/>
+			<a id="8" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="9" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="10" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="11" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a><br/>
+			<a id="12" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="13" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="14" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+			<a id="15" class="puzzleBlock ui-btn ui-corner-all ui-btn-inline"></a>
+		</div>
+		<div data-role="popup" id="popupBasic" data-overlay-theme="a" class="ui-content" >
+	    	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+				<p>This is a 15 puzzle Game.<p>
+				<p>Tap on the numbers to move them into the adjacent empty block<p>
+				<p>The objective is to get the tiles into the formation as shown in image:</p>
+				<img src="themes/images/puzzle15.png" />
+				<p>Created By:<p>
+		</div>
+		<div data-role="popup" id="gameOver" data-overlay-theme="a" class="ui-content" >
+	    	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+				<span id="msg"></span>
+		</div>		
+	</div>
+</body>
+</html>
